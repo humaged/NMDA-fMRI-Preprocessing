@@ -1,6 +1,10 @@
-%% Preprocessing
+%% Working on Fabius Berner's and Dirk Ostwald's code
+
+% Preprocessing
 % adding SPM 12
 addpath(genpath([pwd,'/SPM12'])) %This ensures your SPM12 is loaded and running
+spm ('defaults', 'fmri') %Initialization of spm defaults
+spm ('initcfg')
 
 %Vector indicating which steps should be performed
 % v(1) = Realignment
@@ -11,3 +15,16 @@ addpath(genpath([pwd,'/SPM12'])) %This ensures your SPM12 is loaded and running
 v = [1,1,1,1,1]; 
 
 %Switch-case statements determine which jobs have to be executed 
+%% Establishing directories where the data are
+data_dir = '/Users/humagedemenli/Documents/data/MoAEpilot/fM00223'; %This is the directory of the fMRI .img files 
+source_dir = '/Users/humagedemenli/Documents/data/MoAEpilot/sM00223'; %This is the directory of the source image for coregistration
+tpm_path = '/Users/humagedemenli/Documents/MATLAB/spm/tpm'; %This is the directory for NIFTI files for segmentation
+
+%% Realignment 
+switch v(1)
+    case 1
+        realign_estimate_reslice = struct; 
+        files = spm_select('List',data_dir,'^fM','.img');
+        fs = cellstr([repmat([data_dir filesep], size(files,1), 1) files, repmat(',1',size(files,1),1)]); %formed in the SPM style
+        
+          
