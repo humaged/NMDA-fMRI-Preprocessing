@@ -16,12 +16,15 @@ spm ('initcfg')
 v = [1,1,1,1,1]; 
 
 % Switch-case statements determine which jobs have to be executed 
+
 %% Establishing directories where the data are
 data_dir = '/Users/humagedemenli/Documents/data/MoAEpilot/fM00223'; % This is the directory of the fMRI .img files 
 source_dir = '/Users/humagedemenli/Documents/data/MoAEpilot/sM00223'; % This is the directory of the source image for coregistration
-tpm_path = '/Users/humagedemenli/Documents/MATLAB/spm/tpm'; % This is the directory for NIFTI files for segmentation
+tpm_path = '/Users/humagedemenli/Documents/MATLAB/SPM12/tpm'; % This is the directory for NIFTI files for segmentation
+
 
 %% Realignment 
+
 switch v(1)
     case 1
         realign_estimate_reslice = struct; % Creating a structure for the jobman
@@ -46,6 +49,7 @@ switch v(1)
 end
 
 %% Coregistration
+
 switch v(2)
     case 1
         coregister = struct; % Creating a structure for the jobman
@@ -66,6 +70,7 @@ switch v(2)
 end
 
 %% Segmentation
+
 switch v(3)
     case 1
 
@@ -129,11 +134,11 @@ switch v(3)
         matlabbatch{1}.spm.spatial.preproc.warp.bb = [NaN NaN NaN
                                                       NaN NaN NaN];
                 spm_jobman('run', segmentation.matlabbatch);
-
     otherwise
 end
 
 %% Normalize 
+
 switch v(4)
     case 1
 normalize = struct; 
@@ -155,6 +160,7 @@ normalize = struct;
 end
 
 %% Smooth 
+
 switch v(5)
     case 1
         smooth = struct; 
@@ -172,7 +178,47 @@ switch v(5)
 end
 
 %% Specification - first level analysis 
-        
+specification = struct; % creating the structure for the jobman
+
+matlabbatch{1}.spm.stats.fmri_spec.dir = {'/Users/humagedemenli/Documents/data/auditory/classical'};
+matlabbatch{1}.spm.stats.fmri_spec.timing.units = 'scans';
+matlabbatch{1}.spm.stats.fmri_spec.timing.RT = 7;
+matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t = 16;
+matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t0 = 8;
+
+% Choosing and structuring the data
+specification_files = spm_select('List', data_dir, '^sw','.img');
+specfication_fs = cellstr([repmat([data_dir filesep], size(specification_files,1), 1) specification_files, repmat(',1',size(specification_files,1),1)]);
+
+% SPM job file code
+matlabbatch{1}.spm.stats.fmri_spec.sess.scans = specfication_fs;
+matlabbatch{1}.spm.stats.fmri_spec.sess.cond.name = 'listening';
+matlabbatch{1}.spm.stats.fmri_spec.sess.cond.onset = [6
+                                                      18
+                                                      30
+                                                      42
+                                                      54
+                                                      66
+                                                      78];
+matlabbatch{1}.spm.stats.fmri_spec.sess.cond.duration = 6;
+matlabbatch{1}.spm.stats.fmri_spec.sess.cond.tmod = 0;
+matlabbatch{1}.spm.stats.fmri_spec.sess.cond.pmod = struct('name', {}, 'param', {}, 'poly', {});
+matlabbatch{1}.spm.stats.fmri_spec.sess.cond.orth = 1;
+matlabbatch{1}.spm.stats.fmri_spec.sess.multi = {''};
+matlabbatch{1}.spm.stats.fmri_spec.sess.regress = struct('name', {}, 'val', {});
+matlabbatch{1}.spm.stats.fmri_spec.sess.multi_reg = {''};
+matlabbatch{1}.spm.stats.fmri_spec.sess.hpf = 128;
+matlabbatch{1}.spm.stats.fmri_spec.fact = struct('name', {}, 'levels', {});
+matlabbatch{1}.spm.stats.fmri_spec.bases.hrf.derivs = [0 0];
+matlabbatch{1}.spm.stats.fmri_spec.volt = 1;
+matlabbatch{1}.spm.stats.fmri_spec.global = 'None';
+matlabbatch{1}.spm.stats.fmri_spec.mthresh = 0.8;
+matlabbatch{1}.spm.stats.fmri_spec.mask = {''};
+matlabbatch{1}.spm.stats.fmri_spec.cvi = 'AR(1)';
+spm_jobman('run', specification.matlabbatch);
+
+    otherwise
+end
 
         
           
