@@ -136,6 +136,42 @@ end
 %% Normalize 
 switch v(4)
     case 1
+normalize = struct; 
+        files = spm_select('List',data_dir,'^fM','.img');
+        fs_n = cellstr([repmat([data_dir filesep], size(files,1), 1) files, repmat(',1',size(files,1),1)]);
+        def_file = spm_select('List',source_dir,'^y','.nii');
+        def_n = cellstr([repmat([source_dir filesep], size(def_file,1), 1) def_file]);
+        
+        normalize.matlabbatch{1}.spm.spatial.normalise.write.subj.def = def_n;
+        normalize.matlabbatch{1}.spm.spatial.normalise.write.subj.resample = fs_n;
+        normalize.matlabbatch{1}.spm.spatial.normalise.write.woptions.bb = [-78 -112 -70
+                                                                  78 76 85];
+        normalize.matlabbatch{1}.spm.spatial.normalise.write.woptions.vox = [3 3 3];
+        normalize.matlabbatch{1}.spm.spatial.normalise.write.woptions.interp = 4;
+        normalize.matlabbatch{1}.spm.spatial.normalise.write.woptions.prefix = 'w';
+        spm_jobman('run', normalize.matlabbatch, inputs{:});
+
+    otherwise
+end
+
+%% Smooth 
+switch v(5)
+    case 1
+        smooth = struct; 
+        files_w = spm_select('List',data_dir,'^wf','.img');
+        fs_w = cellstr([repmat([data_dir filesep], size(files_w,1), 1) files_w, repmat(',1',size(files_w,1),1)]);
+          
+        smooth.matlabbatch{1}.spm.spatial.smooth.data = fs_w;
+        smooth.matlabbatch{1}.spm.spatial.smooth.fwhm = [6 6 6];
+        smooth.matlabbatch{1}.spm.spatial.smooth.dtype = 0;
+        smooth.matlabbatch{1}.spm.spatial.smooth.im = 0;
+        smooth.matlabbatch{1}.spm.spatial.smooth.prefix = 's';
+        spm_jobman('run', smooth.matlabbatch);
+
+    otherwise
+end
+
+%% Specification - first level analysis 
         
 
         
