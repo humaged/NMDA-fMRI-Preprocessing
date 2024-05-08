@@ -1,12 +1,13 @@
 %% Working on Fabius Berner's and Dirk Ostwald's code
 
 % Preprocessing
+
 % adding SPM 12
 addpath(genpath([pwd,'/SPM12'])) %This ensures your SPM12 is loaded and running
 spm ('defaults', 'fmri') %Initialization of spm defaults
 spm ('initcfg')
 
-%Vector indicating which steps should be performed
+% Vector indicating which steps should be performed
 % v(1) = Realignment
 % v(2) = Coregistration
 % v(3) = Segmentation 
@@ -14,17 +15,80 @@ spm ('initcfg')
 % v(5) = Smoothing 
 v = [1,1,1,1,1]; 
 
-%Switch-case statements determine which jobs have to be executed 
+% Switch-case statements determine which jobs have to be executed 
 %% Establishing directories where the data are
-data_dir = '/Users/humagedemenli/Documents/data/MoAEpilot/fM00223'; %This is the directory of the fMRI .img files 
-source_dir = '/Users/humagedemenli/Documents/data/MoAEpilot/sM00223'; %This is the directory of the source image for coregistration
-tpm_path = '/Users/humagedemenli/Documents/MATLAB/spm/tpm'; %This is the directory for NIFTI files for segmentation
+data_dir = '/Users/humagedemenli/Documents/data/MoAEpilot/fM00223'; % This is the directory of the fMRI .img files 
+source_dir = '/Users/humagedemenli/Documents/data/MoAEpilot/sM00223'; % This is the directory of the source image for coregistration
+tpm_path = '/Users/humagedemenli/Documents/MATLAB/spm/tpm'; % This is the directory for NIFTI files for segmentation
 
 %% Realignment 
 switch v(1)
     case 1
-        realign_estimate_reslice = struct; 
-        files = spm_select('List',data_dir,'^fM','.img');
-        fs = cellstr([repmat([data_dir filesep], size(files,1), 1) files, repmat(',1',size(files,1),1)]); %formed in the SPM style
+        realign_estimate_reslice = struct; % Creating a structure for the jobman
+        files = spm_select('List',data_dir,'^fM','.img'); % Select all the files that starts with fM and ends with .img
+        fs = cellstr([repmat([data_dir filesep], size(files,1), 1) files, repmat(',1',size(files,1),1)]); % Data formed in the SPM style
+
+        realign_estimate_reslice.matlabbatch{1}.spm.spatial.realign.estwrite.data = {fs};
+        realign_estimate_reslice.matlabbatch{1}.spm.spatial.realign.estwrite.eoptions.quality = 0.9;
+        realign_estimate_reslice.matlabbatch{1}.spm.spatial.realign.estwrite.eoptions.sep = 4;
+        realign_estimate_reslice.matlabbatch{1}.spm.spatial.realign.estwrite.eoptions.fwhm = 5;
+        realign_estimate_reslice.matlabbatch{1}.spm.spatial.realign.estwrite.eoptions.rtm = 1;
+        realign_estimate_reslice.matlabbatch{1}.spm.spatial.realign.estwrite.eoptions.interp = 2;
+        realign_estimate_reslice.matlabbatch{1}.spm.spatial.realign.estwrite.eoptions.wrap = [0 0 0];
+        realign_estimate_reslice.matlabbatch{1}.spm.spatial.realign.estwrite.eoptions.weight = ''; 
+        realign_estimate_reslice.matlabbatch{1}.spm.spatial.realign.estwrite.roptions.which = [0 1];
+        realign_estimate_reslice.matlabbatch{1}.spm.spatial.realign.estwrite.roptions.interp = 4;
+        realign_estimate_reslice.matlabbatch{1}.spm.spatial.realign.estwrite.roptions.wrap = [0 0 0];
+        realign_estimate_reslice.matlabbatch{1}.spm.spatial.realign.estwrite.roptions.mask = 1;
+        realign_estimate_reslice.matlabbatch{1}.spm.spatial.realign.estwrite.roptions.prefix = 'r';
+        spm_jobman('run', realign_estimate_reslice.matlabbatch);
+    otherwise
+end
+
+%% Coregistration
+switch v(2)
+    case 1
+        coregister = struct; % Creating a structure for the jobman
+        ref_file = spm_select('List',data_dir,'^m','.img'); % Select all the files that starts with m and ends with .img
+        source_file = spm_select('List',source_dir,'^s','.img'); % Select all the files that starts with s and ends with .img
+        ref_file_s = cellstr([repmat([data_dir filesep], size(ref_file,1), 1) ref_file, repmat(',1',size(ref_file,1),1)]);  % Data formed in the SPM style
+        source_file_s = cellstr([repmat([source_dir filesep], size(source_file,1), 1) source_file, repmat(',1',size(source_file,1),1)]);  % Data formed in the SPM style
+        
+        coregister.matlabbatch{1}.spm.spatial.coreg.estimate.ref = ref_file_s;
+        coregister.matlabbatch{1}.spm.spatial.coreg.estimate.source = source_file_s;
+        coregister.matlabbatch{1}.spm.spatial.coreg.estimate.other = {''};
+        coregister.matlabbatch{1}.spm.spatial.coreg.estimate.eoptions.cost_fun = 'nmi';
+        coregister.matlabbatch{1}.spm.spatial.coreg.estimate.eoptions.sep = [4 2];
+        coregister.matlabbatch{1}.spm.spatial.coreg.estimate.eoptions.tol = [0.02 0.02 0.02 0.001 0.001 0.001 0.01 0.01 0.01 0.001 0.001 0.001];
+        coregister.matlabbatch{1}.spm.spatial.coreg.estimate.eoptions.fwhm = [7 7];
+        spm_jobman('run', coregister.matlabbatch);
+    otherwise
+end
+
+%% Segmentation
+switch v(3)
+    case 1
+
+% Get all the different tpm files organized 
+% There are 6 different priors in the tpm NIFTI file, for 6 different types of tissues in the brain.
+
+        tpm_file_1 = spm_select('List',tpm_path,'^T','.nii');
+        tpm_file_1s = cellstr([repmat([tpm_path filesep], size(tpm_file_1,1), 1) tpm_file_1, repmat(',1',size(tpm_file_1,1),1)]);
+        % tpm_file_2
+        tpm_file_2 = spm_select('List',tpm_path,'^T','.nii');
+        tpm_file_2s = cellstr([repmat([tpm_path filesep], size(tpm_file_2,1), 1) tpm_file_2, repmat(',2',size(tpm_file_2,1),1)]);
+        % tpm_file_3
+        tpm_file_3 = spm_select('List',tpm_path,'^T','.nii');
+        tpm_file_3s = cellstr([repmat([tpm_path filesep], size(tpm_file_3,1), 1) tpm_file_3, repmat(',3',size(tpm_file_3,1),1)]);
+        %tpm_file_4
+        tpm_file_4 = spm_select('List',tpm_path,'^T','.nii');
+        tpm_file_4s = cellstr([repmat([tpm_path filesep], size(tpm_file_4,1), 1) tpm_file_4, repmat(',4',size(tpm_file_4,1),1)]);
+        %tpm_file_5
+        tpm_file_5 = spm_select('List',tpm_path,'^T','.nii');
+        tpm_file_5s = cellstr([repmat([tpm_path filesep], size(tpm_file_5,1), 1) tpm_file_5, repmat(',5',size(tpm_file_5,1),1)]);
+        %tpm_file_6
+        tpm_file_6 = spm_select('List',tpm_path,'^T','.nii');
+        tpm_file_6s = cellstr([repmat([tpm_path filesep], size(tpm_file_6,1), 1) tpm_file_6, repmat(',6',size(tpm_file_6,1),1)]);
+        
         
           
