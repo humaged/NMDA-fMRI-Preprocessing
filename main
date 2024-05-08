@@ -1,0 +1,13 @@
+%% Preprocessing
+% adding SPM 12
+addpath(genpath([pwd,'/SPM12'])) %This ensures your SPM12 is loaded and running
+
+%Vector indicating which steps should be performed
+% v(1) = Realignment
+% v(2) = Coregistration
+% v(3) = Segmentation 
+% v(4) = Normalization 
+% v(5) = Smoothing 
+v = [1,1,1,1,1]; 
+
+%Switch-case statements determine which jobs have to be executed 
