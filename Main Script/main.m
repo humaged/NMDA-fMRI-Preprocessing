@@ -21,6 +21,7 @@ v = [1,1,1,1,1];
 data_dir = '/Users/humagedemenli/Documents/data/MoAEpilot/fM00223'; % This is the directory of the fMRI .img files 
 source_dir = '/Users/humagedemenli/Documents/data/MoAEpilot/sM00223'; % This is the directory of the source image for coregistration
 tpm_path = '/Users/humagedemenli/Documents/MATLAB/SPM12/tpm'; % This is the directory for NIFTI files for segmentation
+class_dir = '/Users/humagedemenli/Documents/data/auditory/classical'; % This is the directory for classical
 
 
 %% Realignment 
@@ -74,6 +75,10 @@ end
 switch v(3)
     case 1
 
+        source_file = spm_select('List',source_dir,'^s','.img');
+        source_file_s = cellstr([repmat([source_dir filesep], size(source_file,1), 1) source_file, repmat(',1',size(source_file,1),1)]);
+
+
 % Get all the different tpm files organized 
 % There are 6 different priors in the tpm NIFTI file, for 6 different types of tissues in the brain.
 
@@ -95,7 +100,7 @@ switch v(3)
         tpm_file_6 = spm_select('List',tpm_path,'^T','.nii');
         tpm_file_6s = cellstr([repmat([tpm_path filesep], size(tpm_file_6,1), 1) tpm_file_6, repmat(',6',size(tpm_file_6,1),1)]);
 
-        matlabbatch{1}.spm.spatial.preproc.channel.vols = {'/Users/humagedemenli/Documents/data/MoAEpilot/sM00223/sM00223_002.img,1'};
+        segmentation.matlabbatch{1}.spm.spatial.preproc.channel.vols = source_file_s;
         matlabbatch{1}.spm.spatial.preproc.channel.biasreg = 0.001;
         matlabbatch{1}.spm.spatial.preproc.channel.biasfwhm = 60;
         matlabbatch{1}.spm.spatial.preproc.channel.write = [0 1];
@@ -120,18 +125,18 @@ switch v(3)
         segmentation.matlabbatch{1}.spm.spatial.preproc.tissue(5).native = [1 0];
         segmentation.matlabbatch{1}.spm.spatial.preproc.tissue(5).warped = [0 0];
         segmentation.matlabbatch{1}.spm.spatial.preproc.tissue(6).tpm = tpm_file_6s;
-        matlabbatch{1}.spm.spatial.preproc.tissue(6).ngaus = 2;
-        matlabbatch{1}.spm.spatial.preproc.tissue(6).native = [0 0];
-        matlabbatch{1}.spm.spatial.preproc.tissue(6).warped = [0 0];
-        matlabbatch{1}.spm.spatial.preproc.warp.mrf = 1;
-        matlabbatch{1}.spm.spatial.preproc.warp.cleanup = 1;
-        matlabbatch{1}.spm.spatial.preproc.warp.reg = [0 0.001 0.5 0.05 0.2];
-        matlabbatch{1}.spm.spatial.preproc.warp.affreg = 'mni';
-        matlabbatch{1}.spm.spatial.preproc.warp.fwhm = 0;
-        matlabbatch{1}.spm.spatial.preproc.warp.samp = 3;
-        matlabbatch{1}.spm.spatial.preproc.warp.write = [0 1];
-        matlabbatch{1}.spm.spatial.preproc.warp.vox = NaN;
-        matlabbatch{1}.spm.spatial.preproc.warp.bb = [NaN NaN NaN
+        segmentation.matlabbatch{1}.spm.spatial.preproc.tissue(6).ngaus = 2;
+        segmentation.matlabbatch{1}.spm.spatial.preproc.tissue(6).native = [0 0];
+        segmentation.matlabbatch{1}.spm.spatial.preproc.tissue(6).warped = [0 0];
+        segmentation.matlabbatch{1}.spm.spatial.preproc.warp.mrf = 1;
+        segmentation.matlabbatch{1}.spm.spatial.preproc.warp.cleanup = 1;
+        segmentation.matlabbatch{1}.spm.spatial.preproc.warp.reg = [0 0.001 0.5 0.05 0.2];
+        segmentation.matlabbatch{1}.spm.spatial.preproc.warp.affreg = 'mni';
+        segmentation.matlabbatch{1}.spm.spatial.preproc.warp.fwhm = 0;
+        segmentation.matlabbatch{1}.spm.spatial.preproc.warp.samp = 3;
+        segmentation.matlabbatch{1}.spm.spatial.preproc.warp.write = [0 1];
+        segmentation.matlabbatch{1}.spm.spatial.preproc.warp.vox = NaN;
+        segmentation.matlabbatch{1}.spm.spatial.preproc.warp.bb = [NaN NaN NaN
                                                       NaN NaN NaN];
                 spm_jobman('run', segmentation.matlabbatch);
     otherwise
@@ -154,7 +159,7 @@ normalize = struct;
         normalize.matlabbatch{1}.spm.spatial.normalise.write.woptions.vox = [3 3 3];
         normalize.matlabbatch{1}.spm.spatial.normalise.write.woptions.interp = 4;
         normalize.matlabbatch{1}.spm.spatial.normalise.write.woptions.prefix = 'w';
-        spm_jobman('run', normalize.matlabbatch, inputs{:});
+        spm_jobman('run', normalize.matlabbatch);
 
     otherwise
 end
@@ -179,6 +184,7 @@ end
 
 %% Specification - first level analysis 
 specification = struct; % creating the structure for the jobman
+%SHOULD I DO "CLEAN BATCH" OR SPECIFICATION.MATLABBATCH ETC...? or job(1)....?
 
 matlabbatch{1}.spm.stats.fmri_spec.dir = {'/Users/humagedemenli/Documents/data/auditory/classical'};
 matlabbatch{1}.spm.stats.fmri_spec.timing.units = 'scans';
